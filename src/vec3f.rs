@@ -35,11 +35,27 @@ impl Vec3f {
         )
     }
 
+    pub fn add(&self, other: &Vec3f) -> Vec3f {
+        Vec3f(
+            self.0 + other.0,
+            self.1 + other.1,
+            self.2 + other.2,
+        )
+    }
+
     pub fn sub(&self, other: &Vec3f) -> Vec3f {
         Vec3f(
             self.0 - other.0,
             self.1 - other.1,
             self.2 - other.2,
+        )
+    }
+
+    pub fn mult_scalar(&self, scalar: f64) -> Vec3f {
+        Vec3f(
+            self.0 * scalar,
+            self.1 * scalar,
+            self.2 * scalar,
         )
     }
 }

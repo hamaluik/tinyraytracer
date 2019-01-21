@@ -17,10 +17,10 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &Vec<&
     let mut closest_intersect: f64 = std::f64::MAX;
 
     for object in objects.iter() {
-        if let Some(dist) = object.ray_intersect(origin, direction) {
-            if dist < closest_intersect {
-                closest_colour = Some(object.colour());
-                closest_intersect = dist;
+        if let Some(intersection) = object.ray_intersect(origin, direction) {
+            if intersection.distance < closest_intersect {
+                closest_colour = Some(object.diffuse_colour());
+                closest_intersect = intersection.distance;
             }
         }
     }
@@ -41,7 +41,7 @@ fn main() -> Result<(), io::Error> {
         vec3f::Vec3f::new(0.8, 0.6, 0.3)
     );
     let sphere2 = sphere::Sphere::new(
-        vec3f::Vec3f::new(2f64, 1f64, -10f64),
+        vec3f::Vec3f::new(1f64, 1f64, -10f64),
         1f64,
         vec3f::Vec3f::new(0.1, 0.6, 0.3)
     );
