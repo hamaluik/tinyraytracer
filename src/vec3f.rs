@@ -19,6 +19,19 @@ impl Vec3f {
     pub fn dot(&self, other: &Vec3f) -> f64 {
         self.0 * other.0 + self.1 * other.1 + self.2 * other . 2
     }
+
+    pub fn length(&self) -> f64 {
+        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+    }
+
+    pub fn normalized(&self) -> Vec3f {
+        let len = self.length();
+        Vec3f(
+            self.0 / len,
+            self.1 / len,
+            self.2 / len,
+        )
+    }
 }
 
 impl ops::Sub for Vec3f {

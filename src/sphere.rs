@@ -16,8 +16,8 @@ impl Sphere {
 }
 
 impl Intersectable for Sphere {
-    fn ray_intersect(&self, origin: Vec3f, direction: Vec3f) -> bool {
-        let line = self.centre.clone() - origin;
+    fn ray_intersect(&self, origin: &Vec3f, direction: &Vec3f) -> bool {
+        let line = self.centre.clone() - origin.clone();
         let tca = line.dot(&direction);
         let d2 = line.dot(&line) - tca * tca;
 
