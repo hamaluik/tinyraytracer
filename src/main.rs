@@ -12,14 +12,20 @@ fn ray_direction(x: usize, y: usize, width: usize, height: usize, field_of_view:
     vec3f::Vec3f::new(px, py, -1.0).normalized()
 }
 
-fn cast_ray(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, object: &intersectable::Intersectable) -> vec3f::Vec3f {
-    let res = object.ray_intersect(origin, direction);
-    if res.is_some() {
-        vec3f::Vec3f::new(1.0, 1.0, 1.0)
+fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &Vec<&'a intersectable::Intersectable>) -> Option<&'a vec3f::Vec3f> {
+    let mut closest_colour = None;
+    let mut closest_intersect: f64 = std::f64::MAX;
+
+    for object in objects.iter() {
+        if let Some(dist) = object.ray_intersect(origin, direction) {
+            if dist < closest_intersect {
+                closest_colour = Some(object.colour());
+                closest_intersect = dist;
+            }
+        }
     }
-    else {
-        vec3f::Vec3f::new(0.2, 0.7, 0.8)
-    }
+    
+    closest_colour
 }
 
 fn main() -> Result<(), io::Error> {
@@ -28,16 +34,31 @@ fn main() -> Result<(), io::Error> {
     let fov = std::f64::consts::FRAC_PI_4;
     let mut framebuffer: Vec<vec3f::Vec3f> = vec![vec3f::Vec3f::default(); width * height];
 
-    let sphere = sphere::Sphere::new(
+    let background = vec3f::Vec3f::new(0.2, 0.7, 0.8);
+    let sphere1 = sphere::Sphere::new(
         vec3f::Vec3f::new(0f64, 0f64, -16f64),
-        2f64
+        2f64,
+        vec3f::Vec3f::new(0.8, 0.6, 0.3)
     );
+    let sphere2 = sphere::Sphere::new(
+        vec3f::Vec3f::new(2f64, 1f64, -10f64),
+        1f64,
+        vec3f::Vec3f::new(0.1, 0.6, 0.3)
+    );
+
+    let objects = vec![
+        &sphere1 as &intersectable::Intersectable,
+        &sphere2 as &intersectable::Intersectable,
+    ];
 
     let origin = vec3f::Vec3f::new(0f64, 0f64, 0f64);
     for j in 0..height {
         for i in 0..width {
             let dir = ray_direction(i, j, width, height, fov);
-            framebuffer[i + (j * width)] = cast_ray(&origin, &dir, &sphere);
+            framebuffer[i + (j * width)] = match cast_ray(&origin, &dir, &objects) {
+                Some(c) => c.clone(),
+                None => background.clone(),
+            };
         }
     }
 

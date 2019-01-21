@@ -3,14 +3,16 @@ use super::intersectable::Intersectable;
 
 pub struct Sphere {
     pub centre: Vec3f,
-    pub radius: f64
+    pub radius: f64,
+    pub colour: Vec3f,
 }
 
 impl Sphere {
-    pub fn new(centre: Vec3f, radius: f64) -> Sphere {
+    pub fn new(centre: Vec3f, radius: f64, colour: Vec3f) -> Sphere {
         Sphere {
             centre,
             radius,
+            colour
         }
     }
 }
@@ -34,5 +36,9 @@ impl Intersectable for Sphere {
             return None;
         }
         Some(t0)
+    }
+
+    fn colour(&self) -> &Vec3f {
+        &self.colour
     }
 }

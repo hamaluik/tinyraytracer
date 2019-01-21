@@ -2,4 +2,5 @@ use super::vec3f::Vec3f;
 
 pub trait Intersectable {
     fn ray_intersect(&self, origin: &Vec3f, direction: &Vec3f) -> Option<f64>;
+    fn colour(&self) -> &Vec3f;
 }
