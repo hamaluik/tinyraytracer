@@ -1,23 +1,24 @@
 use super::vec3f::Vec3f;
 use super::intersectable::{Intersectable, Intersection};
+use super::material::Material;
 
-pub struct Sphere {
+pub struct Sphere<'a> {
     pub centre: Vec3f,
     pub radius: f64,
-    pub diffuse_colour: Vec3f,
+    pub material: &'a Material,
 }
 
-impl Sphere {
-    pub fn new(centre: Vec3f, radius: f64, diffuse_colour: Vec3f) -> Sphere {
+impl<'a> Sphere<'a> {
+    pub fn new(centre: Vec3f, radius: f64, material: &'a Material) -> Sphere<'a> {
         Sphere {
             centre,
             radius,
-            diffuse_colour,
+            material,
         }
     }
 }
 
-impl Intersectable for Sphere {
+impl<'a> Intersectable for Sphere<'a> {
     fn ray_intersect(&self, origin: &Vec3f, direction: &Vec3f) -> Option<Intersection> {
         let l = self.centre.sub(origin);
         let tca = l.dot(direction);
@@ -46,7 +47,7 @@ impl Intersectable for Sphere {
         })
     }
 
-    fn diffuse_colour(&self) -> &Vec3f {
-        &self.diffuse_colour
+    fn material(&self) -> &Material {
+        &self.material
     }
 }

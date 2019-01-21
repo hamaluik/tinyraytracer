@@ -4,6 +4,7 @@ use std::io::prelude::*;
 
 mod vec3f;
 mod intersectable;
+mod material;
 mod sphere;
 
 fn ray_direction(x: usize, y: usize, width: usize, height: usize, field_of_view: f64) -> vec3f::Vec3f {
@@ -12,14 +13,14 @@ fn ray_direction(x: usize, y: usize, width: usize, height: usize, field_of_view:
     vec3f::Vec3f::new(px, py, -1.0).normalized()
 }
 
-fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &Vec<&'a intersectable::Intersectable>) -> Option<&'a vec3f::Vec3f> {
+fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Vec<&'a intersectable::Intersectable>) -> Option<&'a vec3f::Vec3f> {
     let mut closest_colour = None;
     let mut closest_intersect: f64 = std::f64::MAX;
 
     for object in objects.iter() {
         if let Some(intersection) = object.ray_intersect(origin, direction) {
             if intersection.distance < closest_intersect {
-                closest_colour = Some(object.diffuse_colour());
+                closest_colour = Some(&object.material().diffuse);
                 closest_intersect = intersection.distance;
             }
         }
@@ -29,27 +30,22 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &Vec<&
 }
 
 fn main() -> Result<(), io::Error> {
-    let width = 1024;
-    let height = 768;
-    let fov = std::f64::consts::FRAC_PI_4;
+    let width = 512;
+    let height = 512;
+    let fov = std::f64::consts::FRAC_PI_2;
     let mut framebuffer: Vec<vec3f::Vec3f> = vec![vec3f::Vec3f::default(); width * height];
 
     let background = vec3f::Vec3f::new(0.2, 0.7, 0.8);
-    let sphere1 = sphere::Sphere::new(
-        vec3f::Vec3f::new(0f64, 0f64, -16f64),
-        2f64,
-        vec3f::Vec3f::new(0.8, 0.6, 0.3)
-    );
-    let sphere2 = sphere::Sphere::new(
-        vec3f::Vec3f::new(1f64, 1f64, -10f64),
-        1f64,
-        vec3f::Vec3f::new(0.1, 0.6, 0.3)
-    );
+    let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3) };
+    let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1) };
 
     let objects = vec![
-        &sphere1 as &intersectable::Intersectable,
-        &sphere2 as &intersectable::Intersectable,
+        sphere::Sphere::new(vec3f::Vec3f::new(-3.0, 0.0, -16.0), 2.0, &ivory),
+        sphere::Sphere::new(vec3f::Vec3f::new(-1.0, -1.5, -12.0), 2.0, &red_rubber),
+        sphere::Sphere::new(vec3f::Vec3f::new(1.5, -0.5, -18.0), 3.0, &red_rubber),
+        sphere::Sphere::new(vec3f::Vec3f::new(7.0, 5.0, -18.0), 4.0, &ivory),
     ];
+    let objects = objects.iter().map(|o| o as &intersectable::Intersectable).collect();
 
     let origin = vec3f::Vec3f::new(0f64, 0f64, 0f64);
     for j in 0..height {
