@@ -3,6 +3,8 @@ use std::io;
 use std::io::prelude::*;
 
 mod vec3f;
+mod intersectable;
+mod sphere;
 
 fn main() -> Result<(), io::Error> {
     let width = 1024;
