@@ -1,6 +1,4 @@
-use std::ops;
-
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Vec3f(pub f64, pub f64, pub f64);
 
 impl Vec3f {
@@ -17,11 +15,15 @@ impl Vec3f {
     }
 
     pub fn dot(&self, other: &Vec3f) -> f64 {
-        self.0 * other.0 + self.1 * other.1 + self.2 * other . 2
+        (self.0 * other.0) + (self.1 * other.1) + (self.2 * other.2)
     }
 
     pub fn length(&self) -> f64 {
-        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+        self.length_squared().sqrt()
+    }
+
+    pub fn length_squared(&self) -> f64 {
+        self.dot(self)
     }
 
     pub fn normalized(&self) -> Vec3f {
@@ -32,12 +34,8 @@ impl Vec3f {
             self.2 / len,
         )
     }
-}
 
-impl ops::Sub for Vec3f {
-    type Output = Vec3f;
-
-    fn sub(self, other: Vec3f) -> Vec3f {
+    pub fn sub(&self, other: &Vec3f) -> Vec3f {
         Vec3f(
             self.0 - other.0,
             self.1 - other.1,
