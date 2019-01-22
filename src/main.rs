@@ -94,7 +94,7 @@ fn main() -> Result<(), io::Error> {
     let background = vec3f::Vec3f::new(0.2, 0.7, 0.8);
     let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3), albedo: vec3f::Vec3f::new(0.6, 0.3, 0.1), specular_exponent: 50.0 };
     let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1), albedo: vec3f::Vec3f::new(0.9, 0.1, 0.0), specular_exponent: 10.0 };
-    let mirror = material::Material { diffuse: vec3f::Vec3f::new(0.0, 0.0, 0.0), albedo: vec3f::Vec3f::new(1.0, 1.0, 1.0), specular_exponent: 1500.0 };
+    let mirror = material::Material { diffuse: vec3f::Vec3f::new(1.0, 1.0, 1.0), albedo: vec3f::Vec3f::new(0.0, 10.0, 0.8), specular_exponent: 1425.0 };
 
     let objects = vec![
         sphere::Sphere::new(vec3f::Vec3f::new(-3.0, 0.0, -16.0), 2.0, &ivory),
