@@ -18,6 +18,23 @@ fn reflect(i: &vec3f::Vec3f, n: &vec3f::Vec3f) -> vec3f::Vec3f {
     i.sub(&n.mult_scalar(2.0).mult_scalar(i.dot(&n)))
 }
 
+fn refract(i: &vec3f::Vec3f, n: &vec3f::Vec3f, refractive_index: f64) -> vec3f::Vec3f {
+    let cosi = -i.dot(&n).min(1.0).max(-1.0);
+    let etai = if cosi < 0.0 { refractive_index } else { 1.0 };
+    let etat = if cosi < 0.0 { 1.0 } else { refractive_index };
+    let n = if cosi < 0.0 { n.mult_scalar(-1.0) } else { *n };
+    let cosi = cosi.abs();
+    let eta = etai / etat;
+    let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
+
+    if k < 0.0 {
+        vec3f::Vec3f::new(0.0, 0.0, 0.0)
+    }
+    else {
+        i.mult_scalar(eta).add(&n.mult_scalar(eta * cosi - k.sqrt()))
+    }
+}
+
 fn scene_intersect<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &Vec<&'a intersectable::Intersectable>) -> Option<(intersectable::Intersection, &'a material::Material)> {
     let mut material: Option<&material::Material> = None;
     let mut closest_intersection: Option<intersectable::Intersection> = None;
@@ -47,14 +64,22 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Ve
         None => return None,
     };
 
-    let reflect_direction = reflect(&direction, &intersection.normal).normalized();
+    let reflect_direction = reflect(direction, &intersection.normal).normalized();
+    let refract_direction = refract(direction, &intersection.normal, material.refractive_index).normalized();
     let reflect_origin: vec3f::Vec3f = if reflect_direction.dot(&intersection.normal) < 0.0 {
         intersection.point.sub(&intersection.normal.mult_scalar(1e-3))
     }
     else {
         intersection.point.add(&intersection.normal.mult_scalar(1e-3))
     };
+    let refract_origin: vec3f::Vec3f = if refract_direction.dot(&intersection.normal) < 0.0 {
+        intersection.point.sub(&intersection.normal.mult_scalar(1e-3))
+    }
+    else {
+        intersection.point.add(&intersection.normal.mult_scalar(1e-3))
+    };
     let reflect_colour = cast_ray(&reflect_origin, &reflect_direction, objects, lights, depth + 1).unwrap_or(vec3f::Vec3f::new(0.2, 0.7, 0.8));
+    let refract_colour = cast_ray(&refract_origin, &refract_direction, objects, lights, depth + 1).unwrap_or(vec3f::Vec3f::new(0.2, 0.7, 0.8));
 
     let mut diffuse_light_intensity: f64 = 0.0;
     let mut specular_light_intensity: f64 = 0.0;
@@ -82,6 +107,7 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Ve
         material.diffuse.mult_scalar(diffuse_light_intensity * material.albedo.0)
         .add(&vec3f::Vec3f::new(1.0, 1.0, 1.0).mult_scalar(specular_light_intensity * material.albedo.1))
         .add(&reflect_colour.mult_scalar(material.albedo.2))
+        .add(&refract_colour.mult_scalar(material.albedo.3))
     )
 }
 
@@ -92,13 +118,14 @@ fn main() -> Result<(), io::Error> {
     let mut framebuffer: Vec<vec3f::Vec3f> = vec![vec3f::Vec3f::default(); width * height];
 
     let background = vec3f::Vec3f::new(0.2, 0.7, 0.8);
-    let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3), albedo: vec3f::Vec3f::new(0.6, 0.3, 0.1), specular_exponent: 50.0 };
-    let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1), albedo: vec3f::Vec3f::new(0.9, 0.1, 0.0), specular_exponent: 10.0 };
-    let mirror = material::Material { diffuse: vec3f::Vec3f::new(1.0, 1.0, 1.0), albedo: vec3f::Vec3f::new(0.0, 10.0, 0.8), specular_exponent: 1425.0 };
+    let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3), albedo: (0.6, 0.3, 0.1, 0.0), specular_exponent: 50.0, refractive_index: 1.0 };
+    let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1), albedo: (0.9, 0.1, 0.0, 0.0), specular_exponent: 10.0, refractive_index: 1.0 };
+    let mirror = material::Material { diffuse: vec3f::Vec3f::new(1.0, 1.0, 1.0), albedo: (0.0, 10.0, 0.8, 0.0), specular_exponent: 1425.0, refractive_index: 1.0 };
+    let glass = material::Material { diffuse: vec3f::Vec3f::new(0.6, 0.7, 0.8), albedo: (0.0,  0.5, 0.1, 0.8), specular_exponent: 125.0, refractive_index: 1.5 };
 
     let objects = vec![
         sphere::Sphere::new(vec3f::Vec3f::new(-3.0, 0.0, -16.0), 2.0, &ivory),
-        sphere::Sphere::new(vec3f::Vec3f::new(-1.0, -1.5, -12.0), 2.0, &mirror),
+        sphere::Sphere::new(vec3f::Vec3f::new(-1.0, -1.5, -12.0), 2.0, &glass),
         sphere::Sphere::new(vec3f::Vec3f::new(1.5, -0.5, -18.0), 3.0, &red_rubber),
         sphere::Sphere::new(vec3f::Vec3f::new(7.0, 5.0, -18.0), 4.0, &mirror),
     ];
