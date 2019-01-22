@@ -54,7 +54,7 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Ve
     else {
         intersection.point.add(&intersection.normal.mult_scalar(1e-3))
     };
-    let reflect_colour = cast_ray(&reflect_origin, &reflect_direction, objects, lights, depth + 1).unwrap_or(vec3f::Vec3f::new(0.0, 0.0, 0.0));
+    let reflect_colour = cast_ray(&reflect_origin, &reflect_direction, objects, lights, depth + 1).unwrap_or(vec3f::Vec3f::new(0.2, 0.7, 0.8));
 
     let mut diffuse_light_intensity: f64 = 0.0;
     let mut specular_light_intensity: f64 = 0.0;
@@ -94,7 +94,7 @@ fn main() -> Result<(), io::Error> {
     let background = vec3f::Vec3f::new(0.2, 0.7, 0.8);
     let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3), albedo: vec3f::Vec3f::new(0.6, 0.3, 0.1), specular_exponent: 50.0 };
     let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1), albedo: vec3f::Vec3f::new(0.9, 0.1, 0.0), specular_exponent: 10.0 };
-    let mirror = material::Material { diffuse: vec3f::Vec3f::new(0.0, 0.0, 0.0), albedo: vec3f::Vec3f::new(1.0, 1.0, 1.0), specular_exponent: 100.0 };
+    let mirror = material::Material { diffuse: vec3f::Vec3f::new(0.0, 0.0, 0.0), albedo: vec3f::Vec3f::new(1.0, 1.0, 1.0), specular_exponent: 1500.0 };
 
     let objects = vec![
         sphere::Sphere::new(vec3f::Vec3f::new(-3.0, 0.0, -16.0), 2.0, &ivory),
