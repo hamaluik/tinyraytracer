@@ -7,10 +7,17 @@ impl Vec3f {
     }
 
     pub fn to_rgb(&self) -> [u8; 3] {
+        let scale: f64 = if self.0.max(0.0).max(self.1).max(self.2) > 1.0 {
+            1.0 / self.0.max(0.0).max(self.1).max(self.2)
+        }
+        else {
+            1.0
+        };
+
         [
-            (self.0.max(0.0).min(1.0) * 255f64) as u8,
-            (self.1.max(0.0).min(1.0) * 255f64) as u8,
-            (self.2.max(0.0).min(1.0) * 255f64) as u8,
+            ((self.0 * scale).max(0.0).min(1.0) * 255f64) as u8,
+            ((self.1 * scale).max(0.0).min(1.0) * 255f64) as u8,
+            ((self.2 * scale).max(0.0).min(1.0) * 255f64) as u8,
         ]
     }
 
