@@ -1,4 +1,4 @@
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Copy)]
 pub struct Vec3f(pub f64, pub f64, pub f64);
 
 impl Vec3f {

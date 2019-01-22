@@ -1,6 +1,7 @@
 use super::vec3f::Vec3f;
 use super::material::Material;
 
+#[derive(Clone, Debug, Copy)]
 pub struct Intersection {
     pub distance: f64,
     pub point: Vec3f,
