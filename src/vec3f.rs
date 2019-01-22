@@ -66,3 +66,9 @@ impl Vec3f {
         )
     }
 }
+
+impl From<(f64, f64, f64)> for Vec3f {
+    fn from(tuple: (f64, f64, f64)) -> Self {
+        Vec3f(tuple.0, tuple.1, tuple.2)
+    }
+}

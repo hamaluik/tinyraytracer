@@ -37,11 +37,24 @@ fn scene_intersect<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects:
     Some((closest_intersection.unwrap(), material.unwrap()))
 }
 
-fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Vec<&'a intersectable::Intersectable>, lights: &Vec<light::Light>) -> Option<vec3f::Vec3f> {
+fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Vec<&'a intersectable::Intersectable>, lights: &Vec<light::Light>, depth: usize) -> Option<vec3f::Vec3f> {
+    if depth > 4 {
+        return None;
+    }
+
     let (intersection, material) = match scene_intersect(origin, direction, objects) {
         Some((i, m)) => (i, m),
         None => return None,
     };
+
+    let reflect_direction = reflect(&direction, &intersection.normal).normalized();
+    let reflect_origin: vec3f::Vec3f = if reflect_direction.dot(&intersection.normal) < 0.0 {
+        intersection.point.sub(&intersection.normal.mult_scalar(1e-3))
+    }
+    else {
+        intersection.point.add(&intersection.normal.mult_scalar(1e-3))
+    };
+    let reflect_colour = cast_ray(&reflect_origin, &reflect_direction, objects, lights, depth + 1).unwrap_or(vec3f::Vec3f::new(0.0, 0.0, 0.0));
 
     let mut diffuse_light_intensity: f64 = 0.0;
     let mut specular_light_intensity: f64 = 0.0;
@@ -68,6 +81,7 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Ve
     Some(
         material.diffuse.mult_scalar(diffuse_light_intensity * material.albedo.0)
         .add(&vec3f::Vec3f::new(1.0, 1.0, 1.0).mult_scalar(specular_light_intensity * material.albedo.1))
+        .add(&reflect_colour.mult_scalar(material.albedo.2))
     )
 }
 
@@ -78,14 +92,15 @@ fn main() -> Result<(), io::Error> {
     let mut framebuffer: Vec<vec3f::Vec3f> = vec![vec3f::Vec3f::default(); width * height];
 
     let background = vec3f::Vec3f::new(0.2, 0.7, 0.8);
-    let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3), albedo: (0.6, 0.3), specular_exponent: 50.0 };
-    let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1), albedo: (0.9, 0.1), specular_exponent: 10.0 };
+    let ivory = material::Material { diffuse: vec3f::Vec3f::new(0.4, 0.4, 0.3), albedo: vec3f::Vec3f::new(0.6, 0.3, 0.1), specular_exponent: 50.0 };
+    let red_rubber = material::Material { diffuse: vec3f::Vec3f::new(0.3, 0.1, 0.1), albedo: vec3f::Vec3f::new(0.9, 0.1, 0.0), specular_exponent: 10.0 };
+    let mirror = material::Material { diffuse: vec3f::Vec3f::new(0.0, 10.0, 0.8), albedo: vec3f::Vec3f::new(1.0, 1.0, 1.0), specular_exponent: 1425.0 };
 
     let objects = vec![
         sphere::Sphere::new(vec3f::Vec3f::new(-3.0, 0.0, -16.0), 2.0, &ivory),
-        sphere::Sphere::new(vec3f::Vec3f::new(-1.0, -1.5, -12.0), 2.0, &red_rubber),
+        sphere::Sphere::new(vec3f::Vec3f::new(-1.0, -1.5, -12.0), 2.0, &mirror),
         sphere::Sphere::new(vec3f::Vec3f::new(1.5, -0.5, -18.0), 3.0, &red_rubber),
-        sphere::Sphere::new(vec3f::Vec3f::new(7.0, 5.0, -18.0), 4.0, &ivory),
+        sphere::Sphere::new(vec3f::Vec3f::new(7.0, 5.0, -18.0), 4.0, &mirror),
     ];
     let objects = objects.iter().map(|o| o as &intersectable::Intersectable).collect();
 
@@ -108,7 +123,7 @@ fn main() -> Result<(), io::Error> {
     for j in 0..height {
         for i in 0..width {
             let dir = ray_direction(i, j, width, height, fov);
-            framebuffer[i + (j * width)] = match cast_ray(&origin, &dir, &objects, &lights) {
+            framebuffer[i + (j * width)] = match cast_ray(&origin, &dir, &objects, &lights, 0) {
                 Some(c) => c.clone(),
                 None => background.clone(),
             };
