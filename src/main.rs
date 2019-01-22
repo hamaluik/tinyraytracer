@@ -18,7 +18,7 @@ fn reflect(i: &vec3f::Vec3f, n: &vec3f::Vec3f) -> vec3f::Vec3f {
     i.sub(&n.mult_scalar(2.0).mult_scalar(i.dot(&n)))
 }
 
-fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Vec<&'a intersectable::Intersectable>, lights: &Vec<light::Light>) -> Option<vec3f::Vec3f> {
+fn scene_intersect<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &Vec<&'a intersectable::Intersectable>) -> Option<(intersectable::Intersection, &'a material::Material)> {
     let mut material: Option<&material::Material> = None;
     let mut closest_intersection: Option<intersectable::Intersection> = None;
 
@@ -34,15 +34,35 @@ fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Ve
     if closest_intersection.is_none() {
         return None;
     }
-    let closest_intersection = closest_intersection.unwrap();
-    let material = material.unwrap();
+    Some((closest_intersection.unwrap(), material.unwrap()))
+}
+
+fn cast_ray<'a>(origin: &vec3f::Vec3f, direction: &vec3f::Vec3f, objects: &'a Vec<&'a intersectable::Intersectable>, lights: &Vec<light::Light>) -> Option<vec3f::Vec3f> {
+    let (intersection, material) = match scene_intersect(origin, direction, objects) {
+        Some((i, m)) => (i, m),
+        None => return None,
+    };
 
     let mut diffuse_light_intensity: f64 = 0.0;
     let mut specular_light_intensity: f64 = 0.0;
     for light in lights.iter() {
-        let light_dir = light.position.sub(&closest_intersection.point).normalized();
-        diffuse_light_intensity += light.intensity * (light_dir.dot(&closest_intersection.normal)).max(0.0);
-        specular_light_intensity += (reflect(&light_dir.mult_scalar(-1.0), &closest_intersection.normal).mult_scalar(-1.0).dot(direction)).max(0.0).powf(material.specular_exponent) * light.intensity;
+        let light_direction = light.position.sub(&intersection.point).normalized();
+        let light_distance = light.position.sub(&intersection.point).length();
+
+        let shadow_origin: vec3f::Vec3f = if light_direction.dot(&intersection.normal) < 0.0 {
+            intersection.point.sub(&intersection.normal.mult_scalar(1e-3))
+        }
+        else {
+            intersection.point.add(&intersection.normal.mult_scalar(1e-3))
+        };
+        if let Some((shadow_intersect, _)) = scene_intersect(&shadow_origin, &light_direction, objects) {
+            if shadow_intersect.point.sub(&shadow_origin).length() < light_distance {
+                continue;
+            }
+        }
+
+        diffuse_light_intensity += light.intensity * (light_direction.dot(&intersection.normal)).max(0.0);
+        specular_light_intensity += (reflect(&light_direction.mult_scalar(-1.0), &intersection.normal).mult_scalar(-1.0).dot(direction)).max(0.0).powf(material.specular_exponent) * light.intensity;
     }
     
     Some(
