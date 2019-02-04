@@ -12,3 +12,4 @@ pub trait Intersectable {
     fn ray_intersect(&self, origin: &Vec3f, direction: &Vec3f) -> Option<Intersection>;
     fn material(&self) -> &Material;
 }
+
